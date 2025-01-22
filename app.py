@@ -5,6 +5,7 @@ from joblib import load
 import pandas as pd
 import tensorflow as tf
 from flask import Flask, render_template, request, redirect
+from flask_cors import CORS  # Import Flask-CORS
 
 # Load the TensorFlow Lite model
 interpreter = tf.lite.Interpreter(model_path='models/feature_extractor.tflite')
@@ -64,6 +65,9 @@ def predict_artifact(image_path):
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Enable CORS for all routes
+CORS(app)
 
 @app.route('/')
 def index():

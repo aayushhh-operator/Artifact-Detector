@@ -4,7 +4,7 @@ import cv2
 from joblib import load
 import pandas as pd
 import tensorflow as tf
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, jsonify
 from flask_cors import CORS  # Import Flask-CORS
 
 # Load the TensorFlow Lite model
@@ -60,8 +60,16 @@ def predict_artifact(image_path):
     artifact_category = artifact_details['Category/Type']
     artifact_description = artifact_details['Description']
 
-    return predicted_object_number, artifact_name, artifact_date, artifact_culture, artifact_material, artifact_dimensions, artifact_category, artifact_description
-
+    return {
+        'predicted_object_number': predicted_object_number,
+        'artifact_name': artifact_name,
+        'artifact_date': artifact_date,
+        'artifact_culture': artifact_culture,
+        'artifact_material': artifact_material,
+        'artifact_dimensions': artifact_dimensions,
+        'artifact_category': artifact_category,
+        'artifact_description': artifact_description
+    }
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -76,20 +84,25 @@ def index():
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
-        return redirect(request.url)
+        return jsonify({'error': 'No file part'}), 400
     
     file = request.files['file']
     
     if file:
-        # Save the uploaded file
-        file_path = os.path.join('static/uploads', file.filename)
-        file.save(file_path)
+        try:
+            # Save the uploaded file
+            file_path = os.path.join('static/uploads', file.filename)
+            file.save(file_path)
+            
+            # Call predict_artifact function
+            artifact_details = predict_artifact(file_path)
+            
+            # Return JSON response with artifact details
+            return jsonify(artifact_details)
         
-        # Call predict_artifact function
-        artifact_details = predict_artifact(file_path)
-        
-        # Pass artifact details to the template for display
-        return render_template('index.html', artifact_details=artifact_details)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    return jsonify({'error': 'No file provided'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

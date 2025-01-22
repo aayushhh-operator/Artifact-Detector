@@ -1,0 +1,6 @@
+Flask
+tensorflow==2.18.0
+joblib
+opencv-python
+pandas
+numpy
